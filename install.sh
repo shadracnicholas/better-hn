@@ -57,6 +57,38 @@ pick_install_dir() {
 	fi
 }
 
+add_to_profile() {
+	dir="$1"
+
+	shell_name=$(basename "${SHELL:-sh}")
+	case "$shell_name" in
+		zsh)  profile="${ZDOTDIR:-$HOME}/.zshrc" ;;
+		bash)
+			if [ "$(uname -s)" = "Darwin" ]; then
+				profile="$HOME/.bash_profile"
+			else
+				profile="$HOME/.bashrc"
+			fi ;;
+		fish) profile="$HOME/.config/fish/config.fish" ;;
+		*)    profile="$HOME/.profile" ;;
+	esac
+
+	if [ "$shell_name" = "fish" ]; then
+		line="fish_add_path \"${dir}\""
+	else
+		line="export PATH=\"${dir}:\$PATH\""
+	fi
+
+	if grep -qF "$dir" "$profile" 2>/dev/null; then
+		return
+	fi
+
+	mkdir -p "$(dirname "$profile")"
+	printf '\n# added by hn installer\n%s\n' "$line" >> "$profile"
+	log "added ${dir} to ${profile}"
+	log "run: source ${profile}  (or open a new terminal)"
+}
+
 main() {
 	os=$(detect_os)
 	arch=$(detect_arch)
@@ -112,12 +144,7 @@ main() {
 
 	case ":${PATH}:" in
 		*:"${install_dir}":*) ;;
-		*)
-			log ""
-			log "note: ${install_dir} is not on your PATH"
-			log "add this to your shell profile:"
-			log "    export PATH=\"${install_dir}:\$PATH\""
-			;;
+		*) add_to_profile "$install_dir" ;;
 	esac
 }
 
