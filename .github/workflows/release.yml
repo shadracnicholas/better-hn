@@ -44,7 +44,7 @@ jobs:
           version="${GITHUB_REF_NAME}"
           out_dir="dist/hn_${version}_${GOOS}_${GOARCH}"
           mkdir -p "${out_dir}"
-          go build -trimpath -ldflags "-s -w" -o "${out_dir}/hn${{ matrix.ext }}" .
+          go build -trimpath -ldflags "-s -w -X main.version=${version}" -o "${out_dir}/hn${{ matrix.ext }}" .
           cp README.md "${out_dir}/" 2>/dev/null || true
 
       - name: archive
