@@ -51,7 +51,6 @@ func GetRankedPosts(s config.Settings) ([]Post, error) {
 		return nil, err
 	}
 
-	sort.Sort(sort.Reverse(sort.IntSlice(ids)))
 	if len(ids) > s.FetchLimit {
 		ids = ids[:s.FetchLimit]
 	}
