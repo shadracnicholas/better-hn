@@ -12,10 +12,11 @@ var (
 )
 
 var (
-	styleTitle  = lipgloss.NewStyle().Foreground(colorOrange).Bold(true)
-	styleNormal = lipgloss.NewStyle().Foreground(colorText)
-	styleDim    = lipgloss.NewStyle().Foreground(colorMuted)
-	styleAccent = lipgloss.NewStyle().Foreground(colorOrange)
+	styleTitle        = lipgloss.NewStyle().Foreground(colorOrange).Bold(true)
+	styleLoadingTitle = lipgloss.NewStyle().Foreground(colorOrange).Bold(true).Padding(0, 1)
+	styleNormal       = lipgloss.NewStyle().Foreground(colorText)
+	styleDim          = lipgloss.NewStyle().Foreground(colorMuted)
+	styleAccent       = lipgloss.NewStyle().Foreground(colorOrange)
 )
 
 var (

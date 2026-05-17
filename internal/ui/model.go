@@ -41,22 +41,34 @@ type Model struct {
 	rootCommentLines []int
 	rootCommentIdx   int
 
-	spinner spinner.Model
+	spinner      spinner.Model
+	blinkSpinner spinner.Model
+}
+
+var cursorBlink = spinner.Spinner{
+	Frames: []string{"█", " "},
+	FPS:    time.Second / 2,
 }
 
 func New() Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = styleAccent
+
+	b := spinner.New()
+	b.Spinner = cursorBlink
+	b.Style = styleAccent
+
 	return Model{
-		spinner:  s,
-		loading:  true,
-		viewport: viewport.New(0, 0),
+		spinner:      s,
+		blinkSpinner: b,
+		loading:      true,
+		viewport:     viewport.New(0, 0),
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, fetchPostsCmd(config.DefaultSettings))
+	return tea.Batch(m.spinner.Tick, m.blinkSpinner.Tick, fetchPostsCmd(config.DefaultSettings))
 }
 
 func fetchPostsCmd(s config.Settings) tea.Cmd {
@@ -129,9 +141,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.GotoTop()
 
 	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		var cmd1, cmd2 tea.Cmd
+		m.spinner, cmd1 = m.spinner.Update(msg)
+		m.blinkSpinner, cmd2 = m.blinkSpinner.Update(msg)
+		return m, tea.Batch(cmd1, cmd2)
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -176,7 +189,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.fullPost = nil
 			m.loadErr = nil
 			m.loading = true
-			return m, tea.Batch(m.spinner.Tick, fetchPostsCmd(config.DefaultSettings))
+			return m, tea.Batch(m.spinner.Tick, m.blinkSpinner.Tick, fetchPostsCmd(config.DefaultSettings))
 
 		case "up", "down", "pgup", "pgdown", "ctrl+u", "ctrl+d":
 			var cmd tea.Cmd
@@ -240,6 +253,15 @@ func (m Model) renderHeader() string {
 }
 
 func (m Model) renderContent() string {
+	if m.loading {
+		text := styleLoadingTitle.Render("better hn") + styleAccent.Render(m.blinkSpinner.View())
+		return lipgloss.NewStyle().
+			Width(m.width).
+			Height(m.height-2).
+			Align(lipgloss.Center, lipgloss.Center).
+			Render(text)
+	}
+
 	storyList := RenderStoryList(m.posts, m.selectedIdx, m.listWidth(), m.height-2)
 
 	var detailPanel string
@@ -261,6 +283,6 @@ func (m Model) renderContent() string {
 }
 
 func (m Model) renderShortcuts() string {
-	shortcuts := " j/k navigate · space next comment · o open · r refresh · q quit"
-	return styleBorderTop.Width(m.width).Render(styleDim.Render(shortcuts))
+	shortcuts := "j/k navigate · space next comment · o open · r refresh · q quit"
+	return styleBorderTop.Width(m.width).Align(lipgloss.Center).Render(styleDim.Render(shortcuts))
 }
